@@ -2,7 +2,7 @@
 - [1. 前世今生](#1-前世今生)
 - [2. docker](#2-docker)
 - [3. kubernetes](#3-kubernetes)
-  - [3.1. 背景 \&\& 需求](#31-背景--需求)
+  - [3.1. 系统需求](#31-系统需求)
   - [3.2. 介绍](#32-介绍)
 - [4. kubernetes安装](#4-kubernetes安装)
   - [4.1. poc pop 基底](#41-poc-pop-基底)
@@ -12,6 +12,7 @@
 - [5. 课后作业](#5-课后作业)
 
 # 1. 前世今生
+![早期云计算发展](image-2.png)
 
 云计算之前，开发者如需部署管理服务，需要根据需求，进行配置、管理与运维物理机。整体上维护困难，成本高昂，重复劳动，风险随机。在那个时代，应用部署与管理面临着以下诸多问题：
 - 硬件、机房等维护成本高。各个团队独立搭建机群、运维机器
@@ -64,7 +65,7 @@ $ docker run "我的镜像"
 而对于开发者们来说，在终于体验到了生产力解放所带来的痛快之后，他们自然选择了用脚投票，直接宣告了 Cloud Foundry 时代的结束。
 
 # 3. kubernetes
-## 3.1. 背景 && 需求
+## 3.1. 系统需求
 ![kubetens前世今世](kubetens前世今世.png)
 
 在过去，多数的应⽤都是⼤型单体应⽤，以单个进程或⼏个进程的⽅式，运⾏于⼏台服务器之上。这些应⽤的发布周期长，⽽且迭代也不频繁。每个发布周期结束前，开发者会把应⽤程序打包后交付给运维团队，运维⼈员再处理部署、监控事宜，并且在硬件发⽣故障时⼿动迁移应⽤。
@@ -122,8 +123,6 @@ $ kubeadm join <Master节点的IP和端口>
 # 5. 课后作业
 1. 阅读kubernetes in action 第一、二章内容
 2. 部署得到一个k8s poc集群
-3. 什么是云原生？
-https://lyremelody.cn/history/timelines/cloudnative-timeline.html
+3. 什么是云原生？备注：[云原生发展史](https://lyremelody.cn/history/timelines/cloudnative-timeline.html)
 4. dockerfile的编写与部署一个web应用 （:8080 hello world）
-5. kubernetes部署的第一个应用
 
