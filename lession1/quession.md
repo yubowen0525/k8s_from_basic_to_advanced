@@ -68,3 +68,8 @@ docker exec -it <容器ID或名称> /bin/bash
 > - 每个分区中的节点可能尝试独立运行并对外提供服务，从而造成数据不一致。
 
 1. 还有哪些部署工具? kubeadmin、kubekey
+
+
+
+# 会议记录：
+1. 

@@ -1,1 +1,1 @@
-docker run -d --cpus=0.01 --name flask-hello-world -p 8080:8080 flask-hello-world
+docker run -d --cpus=0.1 --name flask-hello-world -p 8080:8080 flask-hello-world
