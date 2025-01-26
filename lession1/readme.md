@@ -115,6 +115,7 @@ Linux Cgroups 的全称是 Linux Control Group。它最主要的作用，就是�
 而正如我前面所说的，Namespace 的作用是“隔离”，它让应用进程只能看到该 Namespace 内的“世界”；而 Cgroups 的作用是“限制”，它给这个“世界”围上了一圈看不见的墙。这么一折腾，进程就真的被“装”在了一个与世隔绝的房间里，而这些房间就是 PaaS 项目赖以生存的应用“沙盒”。
 
 ## 进程根目录
+**核心诉求：这一定是一个关于 Mount Namespace 的问题：容器里的应用进程，理应看到一份完全独立的文件系统。**
 
 **是否所有的应用在部署或者升级时都要重复制作一次 rootfs？**
 不是的，通过分层来解决此问题。
@@ -150,15 +151,80 @@ Kubernetes可以被当作集群的⼀个操作系统来看待。不仅简化部�
 
 **kubernetes集群架构**
 ![基础架构](image-1.png)
-控制面板：
-- kubernetes API
-- Scheculer
-- Controller Manager
-- etcd
 
-工作节点：
-- kubelet
-- Kubernetes Service Proxy
+**控制平面是 Kubernetes 集群的核心，负责整个集群的管理和调度。包括以下组件：**
+
+1、Kubernetes API Server
+功能：
+- 提供集群的核心入口，处理外部和内部的所有请求。
+- 提供 RESTful API，供用户、管理员和其他组件交互。
+- 验证和配置 Kubernetes 对象（如 Pods、Services、Deployments）。
+- 将所有状态和配置信息存储到 etcd 中。
+  
+特点：
+- 是唯一与 etcd 直接交互的组件。
+- 保证所有 API 调用的安全性（支持认证和授权）。
+
+2、Scheduler
+功能：
+- 负责将未分配节点的 Pod 分配到合适的工作节点（Node）。
+- 根据预设的调度策略（资源需求、亲和性、反亲和性等）决定 Pod 的部署位置。
+确保最佳的资源利用率和负载均衡。
+
+工作流程：
+- 检测到一个未绑定节点的 Pod。
+- 根据调度算法评估所有节点。
+- 选择一个最优节点并通知 API Server。
+
+3、Controller Manager
+功能：
+- 运行一系列控制器进程，每个控制器负责维护某种类型的对象的期望状态。
+- 常见控制器包括：
+  - Node Controller：监视节点是否健康。
+  - Replication Controller：确保集群中运行指定数量的 Pod 副本。
+  - Service Account Controller：管理服务账户。
+  - Endpoint Controller：管理 Service 和 Pod 的映射。
+- 持续监视集群的实际状态，确保它与期望状态一致。
+
+特点：
+通过与 API Server 通信来协调任务。
+4、etcd
+功能：
+- 分布式键值存储，用于存储集群的所有状态数据。
+- 包括：Pod 的元数据、节点状态、配置数据、Service 等。
+- 提供高可用性和一致性，确保数据安全。
+
+特点：
+- Raft 协议保证数据一致性。
+- 备份和恢复等操作至关重要，因为 etcd 是 Kubernetes 的核心数据库。
+
+**工作节点（Worker Node）组件**
+工作节点是运行应用程序负载的地方。以下组件协同工作以执行调度的任务：
+
+1. Kubelet
+功能：
+- Kubernetes 工作节点的核心代理，负责与控制平面交互。
+- 监视并管理本节点上的 Pod 和容器的生命周期：
+  - 从 API Server 接收调度指令。
+  - 确保容器按照 Pod 的定义运行。
+  - 上报节点和 Pod 的状态到 API Server。
+- 直接与容器运行时（如 Docker、containerd）交互，启动和停止容器。
+
+特点：
+只管理通过 Kubernetes 创建的容器，不会处理手动创建的容器。
+
+
+2、Kubernetes Service Proxy (kube-proxy)
+功能：
+- 实现 Kubernetes 的网络服务模型，负责为 Pod 提供网络连接。
+- 维护集群内的 Service 和 Pod IP 的映射，确保流量正确路由到目标 Pod。
+- 支持负载均衡，将流量分发到与 Service 关联的多个 Pod。
+- 处理网络规则（基于 iptables 或 IPVS），允许服务访问其他服务或外部资源。
+
+特点：
+工作节点上每个节点都有一个 kube-proxy 实例。
+提供集群内部 Pod 通信以及 Service 对外暴露的能力。
+
 
 # 4. kubernetes安装
 ## 4.1. poc pop 基底
