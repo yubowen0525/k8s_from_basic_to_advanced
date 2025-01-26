@@ -1,1 +1,1 @@
-docker run -d -p 8080:8080 flask-hello-world
+docker run -d -p 8080:8080 --name flask-hello-world flask-hello-world
