@@ -8,7 +8,7 @@ sh build.sh
 sh start.sh
 ```
 
-optional：限制只能使用0.01核CPU
+optional：限制只能使用0.1核CPU
 ```
 sh start2.sh
 ```
