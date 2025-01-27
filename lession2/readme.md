@@ -14,7 +14,7 @@
   - [滚动升级](#滚动升级)
 - [StatefulSet](#statefulset)
 - [DaemonSet](#daemonset)
-- [Job CronJob](#job-cronjob)
+- [Job \&\& CronJob](#job--cronjob)
 
 
 # 1. 容器编排与作业管理
@@ -485,7 +485,7 @@ spec:
 这时，你应该可以猜到，我在前面介绍到的 DaemonSet 的“过人之处”，其实就是依靠 Toleration 实现的。
 
 
-# Job CronJob
+# Job && CronJob
 
 ```
 apiVersion: batch/v1
@@ -502,3 +502,4 @@ spec:
       restartPolicy: Never
   backoffLimit: 4
 ```
+

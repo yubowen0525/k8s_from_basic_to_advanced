@@ -26,6 +26,7 @@ spec:
   - metadata:
       name: www
     spec:
+      storageClassName: managed-asan-storage
       accessModes:
       - ReadWriteOnce
       resources:
