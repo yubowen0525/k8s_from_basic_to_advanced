@@ -1,8 +1,21 @@
-# 容器编排与作业管理
+**目录：**
+- [1. 容器编排与作业管理](#1-容器编排与作业管理)
+- [2. 为什么需要pod？](#2-为什么需要pod)
+  - [2.1. 概念1: Pod与容器](#21-概念1-pod与容器)
+  - [2.2. Pod API](#22-pod-api)
+    - [2.2.1. Pod的内容](#221-pod的内容)
+    - [2.2.2. 容器的内容](#222-容器的内容)
+    - [2.2.3. 容器健康检查和恢复机制](#223-容器健康检查和恢复机制)
+  - [2.3. Pod的声明周期](#23-pod的声明周期)
+  - [2.4. 总结](#24-总结)
+- [3. 容器编排](#3-容器编排)
 
-# 为什么需要pod？
 
-## 概念1: Pod与容器
+# 1. 容器编排与作业管理
+
+# 2. 为什么需要pod？
+
+## 2.1. 概念1: Pod与容器
 
 既然有了容器为什么k8s还要做一个pod出来？
 
@@ -32,35 +45,10 @@
    - 一个Pod只有一个IP地址
    - 所有网络资源一个Pod一份，被Pod内的所有容器共享
    - Pod的声明周期只跟Infra容器一致，与容器内的A和B无关
-3. Pod 里的容器只要声明挂载这个 Volume，就一定可以共享这个 Volume 对应的宿主机目录
-   ```
-    apiVersion: v1
-    kind: Pod
-    metadata:
-    name: two-containers
-    spec:
-    restartPolicy: Never
-    volumes:
-    - name: shared-data
-        hostPath:      
-        path: /data
-    containers:
-    - name: nginx-container
-        image: nginx
-        volumeMounts:
-        - name: shared-data
-        mountPath: /usr/share/nginx/html
-    - name: debian-container
-        image: debian
-        volumeMounts:
-        - name: shared-data
-        mountPath: /pod-data
-        command: ["/bin/sh"]
-        args: ["-c", "echo Hello from the debian container > /pod-data/index.html"]
-   ```
+3. Pod不是容器是Kubernetes 项目中的最小编排单位
 
-## Pod API
-### Pod的内容
+## 2.2. Pod API
+### 2.2.1. Pod的内容
 **Pod，而不是容器，才是 Kubernetes 项目中的最小编排单位。**
 将这个设计落实到 API 对象上，容器（Container）就成了 Pod 属性里的一个普通的字段。那么，一个很自然的问题就是：到底哪些属性属于 Pod 对象，而又有哪些属性属于 Container 呢？
 
@@ -74,26 +62,26 @@ Pod 里的容器只要声明挂载这个 Volume，就一定可以共享这个 Vo
     apiVersion: v1
     kind: Pod
     metadata:
-    name: two-containers
+        name: two-containers
     spec:
-    restartPolicy: Never
-    volumes:
-    - name: shared-data
-        hostPath:      
-        path: /data
-    containers:
-    - name: nginx-container
-        image: nginx
-        volumeMounts:
+        restartPolicy: Never
+        volumes:
         - name: shared-data
-        mountPath: /usr/share/nginx/html
-    - name: debian-container
-        image: debian
-        volumeMounts:
-        - name: shared-data
-        mountPath: /pod-data
-        command: ["/bin/sh"]
-        args: ["-c", "echo Hello from the debian container > /pod-data/index.html"]
+            hostPath:      
+            path: /data
+        containers:
+        - name: nginx-container
+            image: nginx
+            volumeMounts:
+            - name: shared-data
+            mountPath: /usr/share/nginx/html
+        - name: debian-container
+            image: debian
+            volumeMounts:
+            - name: shared-data
+            mountPath: /pod-data
+            command: ["/bin/sh"]
+            args: ["-c", "echo Hello from the debian container > /pod-data/index.html"]
    ```
 
 NodeSelector：是一个供用户将 Pod 与 Node 进行绑定的字段，用法如下所示：
@@ -129,7 +117,7 @@ spec:
     tty: true
 ```
 
-### 容器的内容
+### 2.2.2. 容器的内容
 和你分享的 Image（镜像）、Command（启动命令）、workingDir（容器的工作目录）、Ports（容器要开发的端口），以及 volumeMounts（容器要挂载的 Volume）都是构成 Kubernetes 项目中 Container 的主要字段
 
 **首先，是 ImagePullPolicy 字段**。它定义了镜像拉取的策略。而它之所以是一个 Container 级别的属性，是因为容器镜像本来就是 Container 定义中的一部分。
@@ -162,7 +150,7 @@ spec:
 
 所以，在这个例子中，我们在容器成功启动之后，在 /usr/share/message 里写入了一句“欢迎信息”（即 postStart 定义的操作）。而在这个容器被删除之前，我们则先调用了 nginx 的退出指令（即 preStop 定义的操作），从而实现了容器的“优雅退出”。
 
-### **容器健康检查和恢复机制**
+### 2.2.3. 容器健康检查和恢复机制
 在 Kubernetes 中，你可以为 Pod 里的容器定义一个健康检查“探针”（Probe）。这样，kubelet 就会根据这个 Probe 的返回值决定这个容器的状态，而不是直接以容器镜像是否运行（来自 Docker 返回的信息）作为依据。这种机制，是生产环境中保证应用健康存活的重要手段
 
 ```
@@ -189,10 +177,19 @@ spec:
       periodSeconds: 5
 ```
 
+demo解释清楚过程。。。
+
 这时我们发现，Pod 并没有进入 Failed 状态，而是保持了 Running 状态。这是为什么呢？其实，如果你注意到 RESTARTS 字段从 0 到 1 的变化，就明白原因了：这个异常的容器已经被 Kubernetes 重启了。在这个过程中，Pod 保持 Running 状态不变。
 
+**这个功能就是 Kubernetes 里的 Pod 恢复机制，也叫 restartPolicy。它是 Pod 的 Spec 部分的一个标准字段（pod.spec.restartPolicy），默认值是 Always，即：任何时候这个容器发生了异常，它一定会被重新创建。**
 
-## Pod的声明周期
+**此处设置问题？pod重启是在当前节点启动，还是会漂移到其他节点？那什么时候会发生漂移？**
+
+但一定要强调的是，**Pod 的恢复过程，永远都是发生在当前节点上，而不会跑到别的节点上去**。事实上，**一旦一个 Pod 与一个节点（Node）绑定，除非这个绑定发生了变化（pod.spec.node 字段被修改），否则它永远都不会离开这个节点。这也就意味着，如果这个宿主机宕机了，这个 Pod 也不会主动迁移到其他节点上去**。
+
+
+
+## 2.3. Pod的声明周期
 Pod 生命周期的变化，主要体现在 Pod API 对象的 Status 部分，这是它除了 Metadata 和 Spec 之外的第三个重要字段。其中，pod.status.phase，就是 Pod 的当前状态，它有如下几种可能的情况：
 
 1. Pending。这个状态意味着，Pod 的 YAML 文件已经提交给了 Kubernetes，API 对象已经被创建并保存在 Etcd 当中。但是，这个 Pod 里有些容器因为某种原因而不能被顺利创建。比如，调度不成功。
@@ -207,12 +204,96 @@ Pod 生命周期的变化，主要体现在 Pod API 对象的 Status 部分，�
 
 而其中，Ready 这个细分状态非常值得我们关注：它意味着 Pod 不仅已经正常启动（Running 状态），而且已经可以对外提供服务了。这两者之间（Running 和 Ready）是有区别的，你不妨仔细思考一下。Pod 的这些状态信息，是我们判断应用运行情况的重要标准，尤其是 Pod 进入了非“Running”状态后，你一定要能迅速做出反应，根据它所代表的异常情况开始跟踪和定位，而不是去手忙脚乱地查阅文档。
 
-
-
-## 总结
+## 2.4. 总结
 总结概念点：
 1. Pod，而不是容器，才是 Kubernetes 项目中的最小编排单位
 2. 原子调度单位
 3. 逻辑概念，不是实际的隔离环境
 4. 一组共享了Network Namespace资源的容器
 5. 可声明共享同一个Volume
+
+
+
+# 3. 容器编排
+什么是编排，什么是调度？
+
+在上一篇文章中，我和你详细介绍了 Pod 的用法，讲解了 Pod 这个 API 对象的各个字段。而接下来，我们就一起来看看“编排”这个 Kubernetes 项目最核心的功能吧。
+
+**Pod 这个看似复杂的 API 对象，实际上就是对容器的进一步抽象和封装而已。**
+
+所以，Pod 对象，其实就是容器的升级版。它对容器进行了组合，添加了更多的属性和字段。这就好比给集装箱四面安装了吊环，使得 Kubernetes 这架“吊车”，可以更轻松地操作它。
+
+而 Kubernetes 操作这些“集装箱”的逻辑，都由控制器（Controller）完成。先看Deployment 这个最基本的控制器对象。
+
+```
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+spec:
+  selector:
+    matchLabels:
+      app: nginx
+  replicas: 2
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.7.9
+        ports:
+        - containerPort: 80
+```
+
+这就意味着，如果在这个集群中，携带 app=nginx 标签的 Pod 的个数大于 2 的时候，就会有旧的 Pod 被删除；反之，就会有新的 Pod 被创建。
+
+我在前面介绍 Kubernetes 架构的时候，曾经提到过一个叫作 kube-controller-manager 的组件。
+
+实际上，这个组件，就是一系列控制器的集合。我们可以查看一下 Kubernetes 项目的 pkg/controller 目录：
+
+```
+$ cd kubernetes/pkg/controller/
+$ ls -d */              
+deployment/             job/                    podautoscaler/          
+cloud/                  disruption/             namespace/              
+replicaset/             serviceaccount/         volume/
+cronjob/                garbagecollector/       nodelifecycle/          replication/            statefulset/            daemon/
+...
+```
+
+实际上，这些控制器之所以被统一放在 pkg/controller 目录下，就是因为它们都遵循 Kubernetes 项目中的一个通用编排模式，即：控制循环（control loop）。
+
+```
+for {
+  实际状态 := 获取集群中对象X的实际状态（Actual State）
+  期望状态 := 获取集群中对象X的期望状态（Desired State）
+  if 实际状态 == 期望状态{
+    什么都不做
+  } else {
+    执行编排动作，将实际状态调整为期望状态
+  }
+}
+```
+**在具体实现中，实际状态往往来自于 Kubernetes 集群本身。**
+
+比如，kubelet 通过心跳汇报的容器状态和节点状态，或者监控系统中保存的应用监控数据，或者控制器主动收集的它自己感兴趣的信息，这些都是常见的实际状态的来源。
+
+**而期望状态，一般来自于用户提交的 YAML 文件。**
+
+比如，Deployment 对象中 Replicas 字段的值。很明显，这些信息往往都保存在 Etcd 中。
+
+这个操作，通常被叫作调谐（Reconcile）。这个调谐的过程，则被称作“Reconcile Loop”（调谐循环）或者“Sync Loop”（同步循环）。
+
+而调谐的最终结果，往往都是对被控制对象的某种写操作。
+
+
+像 Deployment 这种控制器的设计原理，就是我们前面提到过的，“用一种对象管理另一种对象”的“艺术”。
+
+这个概念非常重要，因为后面我要讲解到的大多数控制器，都会使用 PodTemplate 来统一定义它所要管理的 Pod。更有意思的是，我们还会看到其他类型的对象模板，比如 Volume 的模板。
+
+![deployment概念](image-1.png)
+
+
+
