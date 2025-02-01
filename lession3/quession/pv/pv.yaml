@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: example-pv
+spec:
+  capacity:
+    storage: 5Gi  # 存储容量
+  accessModes:
+    - ReadWriteOnce  # 允许一个节点挂载
+  persistentVolumeReclaimPolicy: Retain  # PVC 删除后，PV 仍然保留数据
+  hostPath:
+    path: "/mnt/k8s-pv"  # 在宿主机上的存储路径

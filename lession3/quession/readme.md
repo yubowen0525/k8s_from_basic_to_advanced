@@ -1,0 +1,7 @@
+1. [configmap](./configmap/)
+2. [secret](./secret/)
+3. [downwardAPI](./downwardAPI/)
+4. [hostpath](./hostpath/)
+5. [empthdir](./emptydir/)
+6. [pv](./pv/)
+7. [sc](./sc/)

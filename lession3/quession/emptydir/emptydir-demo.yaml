@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: emptydir-demo
+spec:
+  volumes:
+    - name: cache-volume  # 定义 emptyDir Volume
+      emptyDir: {}        # 默认使用节点的临时存储
+  containers:
+    - name: writer
+      image: busybox
+      command: [ "sh", "-c", "echo 'Hello from writer' > /cache/data.txt && sleep 3600" ]
+      volumeMounts:
+        - name: cache-volume
+          mountPath: /cache  # 将 emptyDir 挂载到 /cache 目录
+
+    - name: reader
+      image: busybox
+      command: [ "sh", "-c", "cat /cache/data.txt && sleep 3600" ]
+      volumeMounts:
+        - name: cache-volume
+          mountPath: /cache  # 共享同一个 Volume
